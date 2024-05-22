@@ -1,41 +1,81 @@
 import tensorflow as tf
-from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Input, LSTM, Dense, Dropout, BatchNormalization
-from tensorflow.keras.optimizers import Adam
+from keras.models import Model
+from keras.layers import LSTM, Dense, Dropout, Conv1D, MaxPooling1D,  BatchNormalization, GlobalMaxPooling1D, Input, Permute, Flatten
+from keras.layers import Multiply, Add
+from keras.optimizers import Adam
 
-def classifier(input_shape=(408,1)):
-    input_layer = Input(shape=input_shape)
-    
-    # First LSTM block
-    x = LSTM(256, return_sequences=True)(input_layer)
+from imblearn.over_sampling import SMOTE
+from sklearn.model_selection import train_test_split
+
+def lstm_block1(x, units):
+    x = Permute((2, 1))(x)
+    x = LSTM(units, return_sequences=True)(x)
+    x = Dropout(0.2)(x)
+    x = Dense(units, activation="relu")(x)
+    x = Dropout(0.2)(x)
     x = BatchNormalization()(x)
-    x = Dropout(0.3)(x)
-    
-    # Second LSTM block
-    x = LSTM(128, return_sequences=False)(x)
+
+    return x
+
+def lstm_block2(x, units):
+    x = LSTM(units, return_sequences=True)(x)
+    x = Dense(units, activation="relu")(x)
+    x = Permute((2, 1))(x)
+    return x
+
+def conv_block(x, filters, kernel_size):
+    x = Conv1D(filters, kernel_size, activation='relu')(x)
+    x = MaxPooling1D(pool_size=2)(x)
+    x = Dropout(0.2)(x)
     x = BatchNormalization()(x)
-    x = Dropout(0.3)(x)
+    return x
+
+
+def classifier():
+    # Define the model
+    input_layer = Input(shape=(408, 1))
+
+    # block 1
+    x = lstm_block2(input_layer, 256)
+    x = conv_block(x, 64, 3)
+    x = lstm_block1(x, 256)
+
+    # block 2
+    x1 = conv_block(input_layer, 64, 3)
+    x1 = lstm_block2(x, 512)
+    x1 = lstm_block2(x, 256)
+    x1 = Permute((2, 1))(x1)
+
+    x2 = Add()([x, x1])
     
-    # Dense layers
-    x = Dense(64, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.01))(x)
-    x = Dropout(0.3)(x)
+
+    # block 2
+    x1 = conv_block(x2, 64, 3)
+    x1 = lstm_block2(x, 256)
+    x1 = lstm_block2(x, 128)
+    x1 = Permute((2, 1))(x1)
+
+    # block 1
+    x = lstm_block2(x2, 128)
+    x = conv_block(x, 64, 3)
+    x = lstm_block1(x, 128)
+
+    x2 = Add()([x, x1])
+
+
+    x = Dense(32, activation="relu")(x2)
+    x = Dropout(0.2)(x)
     x = BatchNormalization()(x)
-    
-    x = Dense(32, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.01))(x)
-    x = Dropout(0.3)(x)
+
+    x = Dense(16, activation="relu")(x)
+    x = Dropout(0.2)(x)
     x = BatchNormalization()(x)
-    
-    # Output layer
+
     output_layer = Dense(1, activation='sigmoid')(x)
-    
+
     model = Model(inputs=input_layer, outputs=output_layer)
-    
-    # Compile model
-    optimizer = Adam(learning_rate=0.001)
-    model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
+
+    # Compile the model
+    model.compile(optimizer=Adam(), loss='binary_crossentropy', metrics=['accuracy'])
     model.summary()
     return model
-
-
-
-
