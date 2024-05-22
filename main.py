@@ -35,16 +35,10 @@ def trainer(train_sheets, y_train, test_sheets, y_test):
   X_test, y_test = np.array(test_df), np.array(y_test)
 
   # Reshape
-  X_train_reshaped = X_train.reshape(X_train.shape[0], X_train.shape[1], 1)
-  X_test_reshaped = X_test.reshape(X_test.shape[0], X_test.shape[1], 1)
+  # X_train = X_train.reshape(X_train.shape[0], X_train.shape[1], 1)
+  # X_test = X_test.reshape(X_test.shape[0], X_test.shape[1], 1)
   y_train = y_train.reshape(-1, 1)
   y_test = y_test.reshape(-1, 1)
-
-  print("X_train shape:", X_train_reshaped.shape)
-  print("X_test shape:", X_test_reshaped.shape)
-  print("y_train shape:", y_train.shape)
-  print("y_test shape:", y_test.shape)
-
 
   print("X_train shape:", X_train.shape)
   print("X_test shape:", X_test.shape)
@@ -65,25 +59,17 @@ def trainer(train_sheets, y_train, test_sheets, y_test):
                             verbose=0
                         )
 
-# Checkpoint
-  checkpoint_callback = ModelCheckpoint(
-                            filepath=model_name,
-                            monitor='val_accuracy',
-                            save_best_only=True,
-                            mode='max',
-                            verbose=1
-                        )
-  early_stopping = EarlyStopping(monitor='val_accuracy', patience=10, restore_best_weights=True)
+  early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
 
   # Train the classifier
-  history = model.fit(X_train_reshaped, y_train, epochs=50, batch_size=16,
-            validation_data=(X_test_reshaped, y_test), verbose=1,
+  history = model.fit(X_train, y_train, epochs=50, batch_size=16,
+            validation_data=(X_test, y_test), verbose=1,
             callbacks=[checkpoint_callback, early_stopping])
 
   model = tf.keras.models.load_model(model_name)
 
   # Predict on the test set
-  test_loss, test_accuracy = model.evaluate(X_test_reshaped, y_test, verbose=0,)
+  test_loss, test_accuracy = model.evaluate(X_test, y_test, verbose=0,)
 
   # Print classification report
   print(f"Model Validation accuracy : ", test_accuracy*100, "%")

@@ -1,7 +1,7 @@
 import tensorflow as tf
 from keras.models import Model
-from keras.layers import LSTM, Dense, Dropout, Conv1D, MaxPooling1D,  BatchNormalization, GlobalMaxPooling1D, Input, Permute
-from keras.layers import Multiply
+from keras.layers import LSTM, Dense, Dropout, Conv1D, MaxPooling1D,  BatchNormalization, GlobalMaxPooling1D, Input, Permute, Flatten
+from keras.layers import Multiply, Add
 from keras.optimizers import Adam
 
 from imblearn.over_sampling import SMOTE
@@ -46,7 +46,8 @@ def classifier():
     x1 = lstm_block2(x, 256)
     x1 = Permute((2, 1))(x1)
 
-    x2 = Multiply()([x, x1])
+    x2 = Add()([x, x1])
+    
 
     # block 2
     x1 = conv_block(x2, 64, 3)
@@ -59,9 +60,14 @@ def classifier():
     x = conv_block(x, 64, 3)
     x = lstm_block1(x, 128)
 
-    x2 = Multiply()([x, x1])
+    x2 = Add()([x, x1])
 
-    x = Dense(16, activation="relu")(x2)
+
+    x = Dense(32, activation="relu")(x2)
+    x = Dropout(0.2)(x)
+    x = BatchNormalization()(x)
+
+    x = Dense(16, activation="relu")(x)
     x = Dropout(0.2)(x)
     x = BatchNormalization()(x)
 
