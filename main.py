@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import tensorflow as tf
 from keras.losses import BinaryCrossentropy
-from keras.callbacks import ModelCheckpoint
+from keras.callbacks import ModelCheckpoint, EarlyStopping
 from utils.preprocessor import *
 from utils.encoders import *
 from models.model import *
@@ -35,10 +35,16 @@ def trainer(train_sheets, y_train, test_sheets, y_test):
   X_test, y_test = np.array(test_df), np.array(y_test)
 
   # Reshape
-  X_train_reshaped = X_train.reshape(X_train.shape[0], 1, X_train.shape[1])
-  X_test_reshaped = X_test.reshape(X_test.shape[0], 1, X_test.shape[1])
+  X_train_reshaped = X_train.reshape(X_train.shape[0], X_train.shape[1], 1)
+  X_test_reshaped = X_test.reshape(X_test.shape[0], X_test.shape[1], 1)
   y_train = y_train.reshape(-1, 1)
   y_test = y_test.reshape(-1, 1)
+
+  print("X_train shape:", X_train_reshaped.shape)
+  print("X_test shape:", X_test_reshaped.shape)
+  print("y_train shape:", y_train.shape)
+  print("y_test shape:", y_test.shape)
+
 
   print("X_train shape:", X_train.shape)
   print("X_test shape:", X_test.shape)
@@ -59,10 +65,20 @@ def trainer(train_sheets, y_train, test_sheets, y_test):
                             verbose=0
                         )
 
+# Checkpoint
+  checkpoint_callback = ModelCheckpoint(
+                            filepath=model_name,
+                            monitor='val_accuracy',
+                            save_best_only=True,
+                            mode='max',
+                            verbose=1
+                        )
+  early_stopping = EarlyStopping(monitor='val_accuracy', patience=10, restore_best_weights=True)
+
   # Train the classifier
-  model.fit(X_train_reshaped, y_train, epochs=50, batch_size=16, 
-            validation_data=(X_test_reshaped, y_test), verbose=0, 
-            callbacks=[checkpoint_callback])
+  history = model.fit(X_train_reshaped, y_train, epochs=50, batch_size=16,
+            validation_data=(X_test_reshaped, y_test), verbose=1,
+            callbacks=[checkpoint_callback, early_stopping])
 
   model = tf.keras.models.load_model(model_name)
 
