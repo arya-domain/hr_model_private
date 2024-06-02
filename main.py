@@ -62,7 +62,7 @@ def trainer(train_sheets, y_train, test_sheets, y_test):
   early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
 
   # Train the classifier
-  history = model.fit(X_train, y_train, epochs=50, batch_size=16,
+  history = model.fit(X_train, y_train, epochs=200, batch_size=16,
             validation_data=(X_test, y_test), verbose=1,
             callbacks=[checkpoint_callback, early_stopping])
 
