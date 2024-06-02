@@ -90,9 +90,9 @@ def train(train_path, test_path, class_path, criteria_score):
 
 if __name__ == "__main__":
   current_dir = os.getcwd()
-  train_path = current_dir + '/HR_APP/Datasets/hr_dataset[1-10].xlsx'
-  test_path = current_dir + '/HR_APP/Datasets/hr_dataset[11-20].xlsx'
-  class_path = current_dir + "/HR_APP/Datasets/score.csv"
+  train_path = current_dir + '/hr_model_private/Datasets/hr_dataset[1-10].xlsx'
+  test_path = current_dir + '/hr_model_private/Datasets/hr_dataset[11-20].xlsx'
+  class_path = current_dir + "/hr_model_private/Datasets/score.csv"
   criteria_score = 70
   train(train_path, test_path, class_path, criteria_score)
 

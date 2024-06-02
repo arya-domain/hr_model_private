@@ -2,6 +2,7 @@ import tensorflow as tf
 from keras.models import Model
 from keras.optimizers import Adam
 from imblearn.over_sampling import SMOTE
+from keras.layers import *
 
 def conv_block(x, filters, kernel_size):
     x = Conv1D(filters, kernel_size, activation='relu')(x)
